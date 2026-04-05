@@ -1,9 +1,11 @@
 services:
   - type: web
     name: vectocloud-review
-    runtime: python3
+    runtime: image
     repo: https://github.com/yourusername/vectocloud-review
     plan: free
     region: oregon
-    buildCommand: pip install --no-cache-dir -r requirements.txt
-    startCommand: uvicorn review:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
