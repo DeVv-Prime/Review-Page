@@ -2,10 +2,10 @@ services:
   - type: web
     name: vectocloud-review
     runtime: python
-    repo: https://github.com/yourusername/vectocloud-review  # Replace with your repo URL
+    repo: https://github.com/DeVv-Prime/Review-Page
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --no-cache-dir -r requirements.txt
     startCommand: uvicorn review:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
