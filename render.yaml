@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: vectocloud-review
+    runtime: python
+    repo: https://github.com/yourusername/vectocloud-review  # Replace with your repo URL
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn review:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
