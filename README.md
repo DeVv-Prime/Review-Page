@@ -88,17 +88,19 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 Install dependencies
 
-```bash
+bash
 pip install -r requirements.txt
 Run the application
 
-```bash
+bash
 python review.py
 # OR
 uvicorn review:app --reload --port 8000
+```
+
 Open your browser
 
-```
+
 
 text
 http://localhost:8000
