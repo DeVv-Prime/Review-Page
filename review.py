@@ -2,13 +2,20 @@ import json
 import os
 import hashlib
 import secrets
-import httpx
 from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Request, Cookie, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, validator
 import uvicorn
+
+# Try to import httpx, but make it optional
+try:
+    import httpx
+    HAS_HTTPX = True
+except ImportError:
+    HAS_HTTPX = False
+    print("Warning: httpx not installed. AI chat will use mock responses.")
 
 # ---------- Data Models ----------
 class ReviewCreate(BaseModel):
@@ -33,26 +40,19 @@ class AIChatRequest(BaseModel):
     model: str = "gpt-3.5-turbo"
 
 class UIConfig(BaseModel):
-    # Background Settings
     background_type: str = "video"
     background_url: str = "https://motionbgs.com/media/9268/minecraft-snowy-campfire.960x540.mp4"
     gradient_start: str = "#0f0c29"
     gradient_mid: str = "#302b63"
     gradient_end: str = "#24243e"
     solid_color: str = "#0a0c12"
-    
-    # Animation & Effects
     neon_glow: bool = True
     animation_intensity: str = "medium"
     particle_count: int = 40
-    
-    # AI Settings
     ai_api_key: str = ""
     ai_model: str = "gpt-3.5-turbo"
     ai_enabled: bool = True
     ai_welcome_message: str = "Hello! I'm VectoCloud AI Assistant. How can I help you today?"
-    
-    # Links & Branding
     discord_link: str = "https://discord.gg/vectocloud"
     website_link: str = "https://vectocloud.com"
     website_button_text: str = "Visit Our Website"
@@ -60,16 +60,12 @@ class UIConfig(BaseModel):
     website_description: str = "Next-generation cloud platform for modern businesses"
     site_title: str = "VectoCloud"
     site_subtitle: str = "Advanced Review Intelligence Platform"
-    
-    # Theme & Colors
     primary_color: str = "#667eea"
     secondary_color: str = "#764ba2"
     accent_color: str = "#f472b6"
     theme_mode: str = "dark"
     font_family: str = "Inter"
     border_radius: str = "1rem"
-    
-    # Features
     enable_analytics: bool = True
     enable_ai_chat: bool = True
     auto_refresh_interval: int = 30
@@ -78,8 +74,6 @@ class UIConfig(BaseModel):
     enable_delete_button: bool = True
     enable_website_button: bool = True
     enable_floating_particles: bool = True
-    
-    # Personalization
     custom_css: str = ""
     custom_js: str = ""
     favicon_url: str = ""
@@ -206,8 +200,18 @@ def compute_advanced_stats(reviews: List[dict]):
     best_rating_percentage = round((five_star / total) * 100, 1)
     
     now = datetime.now()
-    last_week = [r for r in reviews if datetime.fromisoformat(r["timestamp"]) > now - timedelta(days=7)]
-    previous_week = [r for r in reviews if now - timedelta(days=14) < datetime.fromisoformat(r["timestamp"]) <= now - timedelta(days=7)]
+    last_week = []
+    previous_week = []
+    
+    for r in reviews:
+        try:
+            r_time = datetime.fromisoformat(r["timestamp"])
+            if r_time > now - timedelta(days=7):
+                last_week.append(r)
+            elif now - timedelta(days=14) < r_time <= now - timedelta(days=7):
+                previous_week.append(r)
+        except:
+            pass
     
     last_week_avg = sum(r["rating"] for r in last_week) / len(last_week) if last_week else 0
     previous_week_avg = sum(r["rating"] for r in previous_week) / len(previous_week) if previous_week else 0
@@ -256,6 +260,9 @@ def verify_session(token: str) -> bool:
 
 # ---------- AI Chat Integration ----------
 async def call_ai_api(message: str, api_key: str, model: str) -> str:
+    if not HAS_HTTPX:
+        return "ℹ️ AI chat is available. Please add your OpenAI API key in the Admin Panel under AI Settings."
+    
     if not api_key:
         return "⚠️ AI API key not configured. Please add your OpenAI API key in the Admin Panel under AI Settings."
     
@@ -270,7 +277,7 @@ async def call_ai_api(message: str, api_key: str, model: str) -> str:
                 json={
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are VectoCloud AI Assistant, a helpful assistant for a review management platform."},
+                        {"role": "system", "content": "You are VectoCloud AI Assistant, a helpful assistant for a review management platform. Keep responses concise and friendly."},
                         {"role": "user", "content": message}
                     ],
                     "temperature": 0.7,
@@ -622,9 +629,9 @@ def get_admin_html_content():
                 <div class="form-group" id="gradientGroup" style="display:none">
                     <label>Gradient Start</label>
                     <input type="color" id="gradStart">
-                    <label>Gradient Mid</label>
+                    <label style="margin-top:0.5rem">Gradient Mid</label>
                     <input type="color" id="gradMid">
-                    <label>Gradient End</label>
+                    <label style="margin-top:0.5rem">Gradient End</label>
                     <input type="color" id="gradEnd">
                 </div>
                 <div class="form-group" id="solidGroup" style="display:none">
@@ -645,6 +652,7 @@ def get_admin_html_content():
                 <div class="form-group">
                     <label>OpenAI API Key</label>
                     <input type="password" id="apiKey" placeholder="sk-...">
+                    <small style="color: rgba(255,255,255,0.5); display: block; margin-top: 0.3rem;">Get from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #667eea;">OpenAI Platform</a></small>
                 </div>
                 <div class="form-group">
                     <label>AI Model</label>
@@ -655,18 +663,18 @@ def get_admin_html_content():
                 </div>
                 <div class="form-group">
                     <label>Welcome Message</label>
-                    <input type="text" id="welcomeMsg">
+                    <input type="text" id="welcomeMsg" placeholder="Hello! How can I help you?">
                 </div>
             </div>
             
             <div class="glass-card">
                 <h2><i class="fas fa-link"></i> Links & Branding</h2>
-                <div class="form-group"><label>Discord Support Link</label><input type="text" id="discordLink"></div>
-                <div class="form-group"><label>Website Link</label><input type="text" id="websiteLink"></div>
-                <div class="form-group"><label>Website Button Text</label><input type="text" id="websiteBtnText"></div>
+                <div class="form-group"><label>Discord Support Link</label><input type="text" id="discordLink" placeholder="https://discord.gg/..."></div>
+                <div class="form-group"><label>Website Link</label><input type="text" id="websiteLink" placeholder="https://..."></div>
+                <div class="form-group"><label>Website Button Text</label><input type="text" id="websiteBtnText" placeholder="Visit Website"></div>
                 <div class="form-group"><label>Enable Website Button</label><select id="enableWebsiteBtn"><option value="true">Yes</option><option value="false">No</option></select></div>
-                <div class="form-group"><label>Site Title</label><input type="text" id="siteTitle"></div>
-                <div class="form-group"><label>Site Subtitle</label><input type="text" id="siteSubtitle"></div>
+                <div class="form-group"><label>Site Title</label><input type="text" id="siteTitle" placeholder="VectoCloud"></div>
+                <div class="form-group"><label>Site Subtitle</label><input type="text" id="siteSubtitle" placeholder="Advanced Review Platform"></div>
             </div>
             
             <div class="glass-card">
@@ -676,7 +684,7 @@ def get_admin_html_content():
                 <div class="form-group"><label>Secondary Color</label><input type="color" id="secondaryColor"></div>
                 <div class="form-group"><label>Neon Glow Effect</label><select id="neonGlow"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
                 <div class="form-group"><label>Animation Intensity</label><select id="animIntensity"><option value="light">Light</option><option value="medium">Medium</option><option value="intense">Intense</option></select></div>
-                <div class="form-group"><label>Footer Text</label><input type="text" id="footerText"></div>
+                <div class="form-group"><label>Footer Text</label><input type="text" id="footerText" placeholder="© 2024 VectoCloud"></div>
             </div>
         </div>
         
@@ -738,8 +746,6 @@ def get_admin_html_content():
         async function saveConfig() {
             const bgType = document.getElementById('bgType').value;
             let bgUrl = document.getElementById('bgUrl').value;
-            if(bgType === 'gradient') bgUrl = '';
-            if(bgType === 'solid') bgUrl = '';
             
             const config = {
                 background_type: bgType,
@@ -838,7 +844,6 @@ def get_html_content():
     <link href="https://fonts.googleapis.com/css2?family={config.get("font_family", "Inter")}:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
