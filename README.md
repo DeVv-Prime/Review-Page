@@ -1,5 +1,5 @@
 # Review-Page
-# ☁️ VectoCloud Review Studio
+# ☁️ DeVv-Prime Review  Studio
 
 <div align="center">
 
@@ -79,8 +79,8 @@ text
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/vectocloud-review.git
-   cd vectocloud-review
+   git clone https://github.com/DeVv-Prime/Review-Page.git
+   cd Review-Page
 Create virtual environment
 
 bash
