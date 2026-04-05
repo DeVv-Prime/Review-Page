@@ -41,3 +41,8 @@ ui_config.json
 
 # Logs
 *.log
+
+# Cache
+pip-wheel-metadata/
+.pytest_cache/
+.ruff_cache/
