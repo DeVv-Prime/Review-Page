@@ -5,7 +5,7 @@ import secrets
 import httpx
 from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Request, Cookie, Response, Form
+from fastapi import FastAPI, HTTPException, Request, Cookie, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, validator
 import uvicorn
@@ -33,8 +33,8 @@ class AIChatRequest(BaseModel):
     model: str = "gpt-3.5-turbo"
 
 class UIConfig(BaseModel):
-    # Background Settings (4 Types)
-    background_type: str = "video"  # image, video, gradient, solid
+    # Background Settings
+    background_type: str = "video"
     background_url: str = "https://motionbgs.com/media/9268/minecraft-snowy-campfire.960x540.mp4"
     gradient_start: str = "#0f0c29"
     gradient_mid: str = "#302b63"
@@ -43,7 +43,7 @@ class UIConfig(BaseModel):
     
     # Animation & Effects
     neon_glow: bool = True
-    animation_intensity: str = "medium"  # light, medium, intense
+    animation_intensity: str = "medium"
     particle_count: int = 40
     
     # AI Settings
@@ -65,7 +65,7 @@ class UIConfig(BaseModel):
     primary_color: str = "#667eea"
     secondary_color: str = "#764ba2"
     accent_color: str = "#f472b6"
-    theme_mode: str = "dark"  # dark, light, system
+    theme_mode: str = "dark"
     font_family: str = "Inter"
     border_radius: str = "1rem"
     
@@ -270,7 +270,7 @@ async def call_ai_api(message: str, api_key: str, model: str) -> str:
                 json={
                     "model": model,
                     "messages": [
-                        {"role": "system", "content": "You are VectoCloud AI Assistant, a helpful assistant for a review management platform. You can help users understand reviews, suggest improvements, and answer questions about the platform. Keep responses concise and friendly."},
+                        {"role": "system", "content": "You are VectoCloud AI Assistant, a helpful assistant for a review management platform."},
                         {"role": "user", "content": message}
                     ],
                     "temperature": 0.7,
@@ -565,24 +565,6 @@ def get_admin_html_content():
             transition: transform 0.2s;
         }
         button:hover { transform: scale(1.02); }
-        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-        .preview-box {
-            background: rgba(0,0,0,0.3);
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 2rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .status-enabled { background: #10b981; }
-        .status-disabled { background: #ef4444; }
         .nav-links {
             display: flex;
             gap: 1rem;
@@ -622,41 +604,35 @@ def get_admin_html_content():
         </div>
         
         <div class="grid-2">
-            <!-- Background Settings -->
             <div class="glass-card">
-                <h2><i class="fas fa-image"></i> Background Settings (4 Types)</h2>
+                <h2><i class="fas fa-image"></i> Background Settings</h2>
                 <div class="form-group">
                     <label>Background Type</label>
                     <select id="bgType">
-                        <option value="video">🎬 Video Background</option>
-                        <option value="image">🖼️ Image Background</option>
-                        <option value="gradient">🌈 Gradient Background</option>
-                        <option value="solid">🎨 Solid Color</option>
+                        <option value="video">Video Background</option>
+                        <option value="image">Image Background</option>
+                        <option value="gradient">Gradient Background</option>
+                        <option value="solid">Solid Color</option>
                     </select>
                 </div>
-                <div id="videoSettings" class="bg-setting-group">
-                    <div class="form-group">
-                        <label>Video URL (MP4)</label>
-                        <input type="text" id="videoUrl" placeholder="https://example.com/video.mp4">
-                    </div>
+                <div class="form-group" id="urlGroup">
+                    <label>URL (Video or Image)</label>
+                    <input type="text" id="bgUrl" placeholder="https://example.com/background.mp4">
                 </div>
-                <div id="imageSettings" class="bg-setting-group" style="display:none">
-                    <div class="form-group">
-                        <label>Image URL</label>
-                        <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg">
-                    </div>
+                <div class="form-group" id="gradientGroup" style="display:none">
+                    <label>Gradient Start</label>
+                    <input type="color" id="gradStart">
+                    <label>Gradient Mid</label>
+                    <input type="color" id="gradMid">
+                    <label>Gradient End</label>
+                    <input type="color" id="gradEnd">
                 </div>
-                <div id="gradientSettings" class="bg-setting-group" style="display:none">
-                    <div class="form-group"><label>Gradient Start</label><input type="color" id="gradStart"></div>
-                    <div class="form-group"><label>Gradient Mid</label><input type="color" id="gradMid"></div>
-                    <div class="form-group"><label>Gradient End</label><input type="color" id="gradEnd"></div>
-                </div>
-                <div id="solidSettings" class="bg-setting-group" style="display:none">
-                    <div class="form-group"><label>Solid Color</label><input type="color" id="solidColor"></div>
+                <div class="form-group" id="solidGroup" style="display:none">
+                    <label>Solid Color</label>
+                    <input type="color" id="solidColor">
                 </div>
             </div>
             
-            <!-- AI Settings -->
             <div class="glass-card">
                 <h2><i class="fas fa-robot"></i> AI Chat Settings</h2>
                 <div class="form-group">
@@ -669,59 +645,50 @@ def get_admin_html_content():
                 <div class="form-group">
                     <label>OpenAI API Key</label>
                     <input type="password" id="apiKey" placeholder="sk-...">
-                    <small style="color: rgba(255,255,255,0.5); display: block; margin-top: 0.3rem;">Get from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #667eea;">OpenAI Platform</a></small>
                 </div>
                 <div class="form-group">
                     <label>AI Model</label>
                     <select id="aiModel">
                         <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                         <option value="gpt-4">GPT-4</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Welcome Message</label>
-                    <input type="text" id="welcomeMsg" placeholder="Hello! How can I help you?">
+                    <input type="text" id="welcomeMsg">
                 </div>
             </div>
             
-            <!-- Links & Branding -->
             <div class="glass-card">
                 <h2><i class="fas fa-link"></i> Links & Branding</h2>
-                <div class="form-group"><label>Discord Support Link</label><input type="text" id="discordLink" placeholder="https://discord.gg/..."></div>
-                <div class="form-group"><label>Website Link</label><input type="text" id="websiteLink" placeholder="https://..."></div>
-                <div class="form-group"><label>Website Button Text</label><input type="text" id="websiteBtnText" placeholder="Visit Website"></div>
+                <div class="form-group"><label>Discord Support Link</label><input type="text" id="discordLink"></div>
+                <div class="form-group"><label>Website Link</label><input type="text" id="websiteLink"></div>
+                <div class="form-group"><label>Website Button Text</label><input type="text" id="websiteBtnText"></div>
                 <div class="form-group"><label>Enable Website Button</label><select id="enableWebsiteBtn"><option value="true">Yes</option><option value="false">No</option></select></div>
-                <div class="form-group"><label>Site Title</label><input type="text" id="siteTitle" placeholder="VectoCloud"></div>
-                <div class="form-group"><label>Site Subtitle</label><input type="text" id="siteSubtitle" placeholder="Advanced Review Platform"></div>
+                <div class="form-group"><label>Site Title</label><input type="text" id="siteTitle"></div>
+                <div class="form-group"><label>Site Subtitle</label><input type="text" id="siteSubtitle"></div>
             </div>
             
-            <!-- Theme & Personalization -->
             <div class="glass-card">
                 <h2><i class="fas fa-palette"></i> Theme & Personalization</h2>
                 <div class="form-group"><label>Theme Mode</label><select id="themeMode"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></div>
                 <div class="form-group"><label>Primary Color</label><input type="color" id="primaryColor"></div>
                 <div class="form-group"><label>Secondary Color</label><input type="color" id="secondaryColor"></div>
-                <div class="form-group"><label>Accent Color</label><input type="color" id="accentColor"></div>
-                <div class="form-group"><label>Font Family</label><input type="text" id="fontFamily" placeholder="Inter"></div>
                 <div class="form-group"><label>Neon Glow Effect</label><select id="neonGlow"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
                 <div class="form-group"><label>Animation Intensity</label><select id="animIntensity"><option value="light">Light</option><option value="medium">Medium</option><option value="intense">Intense</option></select></div>
-                <div class="form-group"><label>Footer Text</label><input type="text" id="footerText" placeholder="© 2024 VectoCloud"></div>
+                <div class="form-group"><label>Footer Text</label><input type="text" id="footerText"></div>
             </div>
         </div>
         
         <div class="glass-card">
             <h2><i class="fas fa-save"></i> Save All Settings</h2>
             <button id="saveAllBtn" style="width: 100%;"><i class="fas fa-save mr-2"></i> Save Configuration</button>
-            <div class="preview-box" id="previewBox"></div>
         </div>
     </div>
     
     <div id="toast" class="toast"></div>
     
     <script>
-        let isAdmin = false;
-        
         async function checkAuth() {
             const res = await fetch('/api/admin/verify');
             const data = await res.json();
@@ -729,13 +696,19 @@ def get_admin_html_content():
             else loadConfig();
         }
         
+        function toggleBgSettings() {
+            const type = document.getElementById('bgType').value;
+            document.getElementById('urlGroup').style.display = (type === 'video' || type === 'image') ? 'block' : 'none';
+            document.getElementById('gradientGroup').style.display = type === 'gradient' ? 'block' : 'none';
+            document.getElementById('solidGroup').style.display = type === 'solid' ? 'block' : 'none';
+        }
+        
         async function loadConfig() {
             const res = await fetch('/api/ui-config');
             const config = await res.json();
             
             document.getElementById('bgType').value = config.background_type || 'video';
-            document.getElementById('videoUrl').value = config.background_url || '';
-            document.getElementById('imageUrl').value = config.background_url || '';
+            document.getElementById('bgUrl').value = config.background_url || '';
             document.getElementById('gradStart').value = config.gradient_start || '#0f0c29';
             document.getElementById('gradMid').value = config.gradient_mid || '#302b63';
             document.getElementById('gradEnd').value = config.gradient_end || '#24243e';
@@ -753,8 +726,6 @@ def get_admin_html_content():
             document.getElementById('themeMode').value = config.theme_mode || 'dark';
             document.getElementById('primaryColor').value = config.primary_color || '#667eea';
             document.getElementById('secondaryColor').value = config.secondary_color || '#764ba2';
-            document.getElementById('accentColor').value = config.accent_color || '#f472b6';
-            document.getElementById('fontFamily').value = config.font_family || 'Inter';
             document.getElementById('neonGlow').value = String(config.neon_glow !== false);
             document.getElementById('animIntensity').value = config.animation_intensity || 'medium';
             document.getElementById('footerText').value = config.footer_text || '';
@@ -762,21 +733,13 @@ def get_admin_html_content():
             toggleBgSettings();
         }
         
-        function toggleBgSettings() {
-            const type = document.getElementById('bgType').value;
-            document.getElementById('videoSettings').style.display = type === 'video' ? 'block' : 'none';
-            document.getElementById('imageSettings').style.display = type === 'image' ? 'block' : 'none';
-            document.getElementById('gradientSettings').style.display = type === 'gradient' ? 'block' : 'none';
-            document.getElementById('solidSettings').style.display = type === 'solid' ? 'block' : 'none';
-        }
-        
         document.getElementById('bgType').addEventListener('change', toggleBgSettings);
         
         async function saveConfig() {
             const bgType = document.getElementById('bgType').value;
-            let bgUrl = '';
-            if(bgType === 'video') bgUrl = document.getElementById('videoUrl').value;
-            else if(bgType === 'image') bgUrl = document.getElementById('imageUrl').value;
+            let bgUrl = document.getElementById('bgUrl').value;
+            if(bgType === 'gradient') bgUrl = '';
+            if(bgType === 'solid') bgUrl = '';
             
             const config = {
                 background_type: bgType,
@@ -801,8 +764,9 @@ def get_admin_html_content():
                 theme_mode: document.getElementById('themeMode').value,
                 primary_color: document.getElementById('primaryColor').value,
                 secondary_color: document.getElementById('secondaryColor').value,
-                accent_color: document.getElementById('accentColor').value,
-                font_family: document.getElementById('fontFamily').value,
+                accent_color: "#f472b6",
+                font_family: "Inter",
+                border_radius: "1rem",
                 footer_text: document.getElementById('footerText').value,
                 enable_analytics: true,
                 auto_refresh_interval: 30,
@@ -824,7 +788,6 @@ def get_admin_html_content():
             
             if(res.ok) {
                 showToast('Settings saved successfully!', 'success');
-                document.getElementById('previewBox').innerHTML = '<i class="fas fa-check-circle"></i> Configuration saved. Refresh the main page to see changes.';
             } else {
                 showToast('Error saving settings', 'error');
             }
@@ -857,11 +820,14 @@ def get_html_content():
     if bg_type == "video":
         bg_style = f'<video autoplay muted loop playsinline style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-2;"><source src="{bg_url}" type="video/mp4"></video>'
     elif bg_type == "image":
-        bg_style = f'<div class="animated-bg" style="background-image: url(\'{bg_url}\');"></div>'
+        bg_style = f'<div class="animated-bg" style="background-image: url(\'{bg_url}\'); position:fixed; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; z-index:-2;"></div>'
     elif bg_type == "gradient":
-        bg_style = f'<div class="gradient-overlay" style="background: linear-gradient(135deg, {config.get("gradient_start", "#0f0c29")} 0%, {config.get("gradient_mid", "#302b63")} 50%, {config.get("gradient_end", "#24243e")} 100%);"></div>'
+        bg_style = f'<div class="gradient-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, {config.get("gradient_start", "#0f0c29")} 0%, {config.get("gradient_mid", "#302b63")} 50%, {config.get("gradient_end", "#24243e")} 100%); z-index:-2;"></div>'
     else:
-        bg_style = f'<div class="gradient-overlay" style="background: {config.get("solid_color", "#0a0c12")};"></div>'
+        bg_style = f'<div class="gradient-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: {config.get("solid_color", "#0a0c12")}; z-index:-2;"></div>'
+    
+    website_btn_style = "block" if config.get("enable_website_button", True) else "none"
+    ai_chat_style = "block" if config.get("ai_enabled", True) else "none"
     
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -880,7 +846,6 @@ def get_html_content():
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
-            transition: background 0.3s ease, color 0.3s ease;
         }}
         {bg_style}
         .floating-particles {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }}
@@ -889,7 +854,7 @@ def get_html_content():
         .container {{ max-width: 1400px; margin: 0 auto; padding: 2rem; }}
         .glass-card {{ background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border-radius: {config.get("border_radius", "1rem")}; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; }}
         .glass-card:hover {{ transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }}
-        .neon-glow {{ box-shadow: 0 0 20px rgba({config.get("primary_color", "#667eea")}), 0 0 40px rgba({config.get("primary_color", "#667eea")}, 0.1); }}
+        .neon-glow {{ box-shadow: 0 0 20px {config.get("primary_color", "#667eea")}, 0 0 40px {config.get("primary_color", "#667eea")}; }}
         .btn-primary {{ background: linear-gradient(135deg, {config.get("primary_color", "#667eea")} 0%, {config.get("secondary_color", "#764ba2")} 100%); border: none; transition: all 0.3s ease; cursor: pointer; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; }}
         .btn-primary:hover {{ transform: scale(1.02); filter: brightness(1.05); }}
         .btn-website {{ background: linear-gradient(135deg, #10b981, #059669); border: none; transition: all 0.3s ease; cursor: pointer; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }}
@@ -897,8 +862,6 @@ def get_html_content():
         .star-rating i:hover {{ transform: scale(1.2); }}
         .review-card {{ background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1.5rem; padding: 1.5rem; transition: all 0.3s ease; }}
         .review-card:hover {{ background: rgba(255,255,255,0.15); transform: translateX(5px); }}
-        .admin-panel {{ max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }}
-        .admin-panel.open {{ max-height: 1200px; }}
         .toast-notif {{ position: fixed; bottom: 2rem; right: 2rem; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); padding: 1rem 1.5rem; border-radius: 1rem; color: white; z-index: 1000; transform: translateX(400px); transition: transform 0.3s ease; }}
         .toast-notif.show {{ transform: translateX(0); }}
         @media (max-width: 768px) {{ .container {{ padding: 1rem; }} }}
@@ -945,12 +908,10 @@ def get_html_content():
         .bg-clip-text {{ background-clip: text; }}
         .text-transparent {{ color: transparent; }}
         
-        /* Theme Styles */
-        body.light-theme {{ background: #f5f5f5; color: #1a1a1a; }}
+        body.light-theme {{ background: #f5f5f5; }}
         body.light-theme .glass-card {{ background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }}
         body.light-theme .text-white {{ color: #1a1a1a; }}
         body.light-theme .text-gray-300 {{ color: #4a4a4a; }}
-        body.light-theme .text-gray-400 {{ color: #6b6b6b; }}
     </style>
     {config.get("custom_css", "")}
 </head>
@@ -978,7 +939,6 @@ def get_html_content():
             </div>
         </div>
         
-        <!-- Monitor Bar -->
         <div class="glass-card p-6 mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-white"><i class="fas fa-chart-simple mr-2"></i>Live Performance Monitor</h2>
@@ -1000,12 +960,11 @@ def get_html_content():
         </div>
         
         <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
-            <!-- Left Column -->
             <div>
                 <div class="glass-card p-6">
                     <h2 class="text-2xl font-bold mb-4 text-white"><i class="fas fa-pen-alt mr-2"></i>Write Review</h2>
                     <form id="reviewForm">
-                        <div class="mb-4"><label class="block text-gray-300 mb-2">Username</label><input type="text" id="username" class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-purple-500" required></div>
+                        <div class="mb-4"><label class="block text-gray-300 mb-2">Username</label><input type="text" id="username" class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white" required></div>
                         <div class="mb-4"><label class="block text-gray-300 mb-2">Rating</label><div class="star-rating flex gap-2 text-2xl" id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><input type="hidden" id="rating" value="0"></div>
                         <div class="mb-4"><label class="block text-gray-300 mb-2">Title</label><input type="text" id="title" class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white" required></div>
                         <div class="mb-4"><label class="block text-gray-300 mb-2">Comment</label><textarea id="comment" rows="4" class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white" required></textarea></div>
@@ -1013,25 +972,20 @@ def get_html_content():
                     </form>
                 </div>
                 
-                <!-- AI Chat Widget -->
-                <div class="glass-card p-6 mt-4" id="aiChatWidget">
+                <div class="glass-card p-6 mt-4" id="aiChatWidget" style="display: {ai_chat_style};">
                     <h2 class="text-2xl font-bold mb-4 text-white"><i class="fas fa-robot mr-2"></i>AI Assistant</h2>
-                    <div id="chatMessages" style="height: 200px; overflow-y: auto; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 0.75rem;">
-                        <div class="text-gray-400 text-center">Loading AI assistant...</div>
-                    </div>
+                    <div id="chatMessages" style="height: 200px; overflow-y: auto; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 0.75rem;"></div>
                     <div class="flex gap-2">
                         <input type="text" id="chatInput" placeholder="Ask me anything..." class="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white">
                         <button id="sendChatBtn" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
                 
-                <!-- Website Button -->
-                <div class="mt-4 text-center" id="websiteButtonContainer" style="display: {config.get('enable_website_button', 'true') == 'true' ? 'block' : 'none'}">
+                <div class="mt-4 text-center" id="websiteButtonContainer" style="display: {website_btn_style};">
                     <a href="{config.get('website_link', '#')}" id="mainWebsiteBtn" target="_blank" class="btn-website w-full justify-center"><i class="fas fa-external-link-alt"></i> <span id="mainWebsiteBtnText">{config.get('website_button_text', 'Visit Website')}</span></a>
                 </div>
             </div>
             
-            <!-- Right Column -->
             <div>
                 <div class="glass-card p-6 mb-6">
                     <h2 class="text-2xl font-bold mb-4 text-white"><i class="fas fa-chart-line mr-2"></i>Analytics Dashboard</h2>
@@ -1059,69 +1013,66 @@ def get_html_content():
     <script>
         let currentRating = 0, chart = null, isAdmin = false, currentTheme = '{config.get("theme_mode", "dark")}';
         
-        // Theme handling
-        function applyTheme(theme) {
+        function applyTheme(theme) {{
             const body = document.getElementById('appBody');
-            if(theme === 'light') {
+            if(theme === 'light') {{
                 body.classList.add('light-theme');
-                document.documentElement.style.colorScheme = 'light';
-            } else if(theme === 'dark') {
+            }} else if(theme === 'dark') {{
                 body.classList.remove('light-theme');
-                document.documentElement.style.colorScheme = 'dark';
-            } else if(theme === 'system') {
+            }} else if(theme === 'system') {{
                 const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if(isDark) body.classList.remove('light-theme');
                 else body.classList.add('light-theme');
-            }
+            }}
             currentTheme = theme;
             localStorage.setItem('vectocloud_theme', theme);
-        }
+        }}
         
-        function loadSavedTheme() {
+        function loadSavedTheme() {{
             const saved = localStorage.getItem('vectocloud_theme');
             if(saved) applyTheme(saved);
             else applyTheme('{config.get("theme_mode", "dark")}');
-        }
+        }}
         
-        document.getElementById('themeToggleBtn')?.addEventListener('click', (e) => {
+        document.getElementById('themeToggleBtn')?.addEventListener('click', (e) => {{
             e.preventDefault();
             const newTheme = currentTheme === 'dark' ? 'light' : currentTheme === 'light' ? 'system' : 'dark';
             applyTheme(newTheme);
-            showToast(`Theme changed to ${newTheme}`, 'success');
-        });
+            showToast(`Theme changed to ${{newTheme}}`, 'success');
+        }});
         
-        document.querySelectorAll('#starRating i').forEach(star => {
-            star.addEventListener('click', function() {
+        document.querySelectorAll('#starRating i').forEach(star => {{
+            star.addEventListener('click', function() {{
                 currentRating = parseInt(this.dataset.rating);
-                document.querySelectorAll('#starRating i').forEach((s, idx) => {
+                document.querySelectorAll('#starRating i').forEach((s, idx) => {{
                     s.className = idx < currentRating ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-400';
-                });
+                }});
                 document.getElementById('rating').value = currentRating;
-            });
-        });
+            }});
+        }});
         
-        async function checkAdminStatus() {
+        async function checkAdminStatus() {{
             const res = await fetch('/api/admin/verify');
             const data = await res.json();
             isAdmin = data.authenticated;
             const adminLoginBtn = document.getElementById('adminLoginBtn');
             const adminLogoutBtn = document.getElementById('adminLogoutBtn');
-            if(isAdmin) {
+            if(isAdmin) {{
                 if(adminLoginBtn) adminLoginBtn.style.display = 'none';
                 if(adminLogoutBtn) adminLogoutBtn.style.display = 'flex';
-            } else {
+            }} else {{
                 if(adminLoginBtn) adminLoginBtn.style.display = 'flex';
                 if(adminLogoutBtn) adminLogoutBtn.style.display = 'none';
-            }
-        }
+            }}
+        }}
         
-        document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {
+        document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {{
             e.preventDefault();
-            await fetch('/api/admin/logout', { method: 'POST' });
+            await fetch('/api/admin/logout', {{ method: 'POST' }});
             window.location.reload();
-        });
+        }});
         
-        async function loadConfig() {
+        async function loadConfig() {{
             const res = await fetch('/api/ui-config');
             const config = await res.json();
             
@@ -1144,59 +1095,58 @@ def get_html_content():
             const aiWidget = document.getElementById('aiChatWidget');
             aiWidget.style.display = config.ai_enabled ? 'block' : 'none';
             
-            if(config.ai_enabled) {
+            if(config.ai_enabled && config.ai_welcome_message) {{
                 initAIChat(config.ai_welcome_message);
-            }
+            }}
             
             let particleCount = config.animation_intensity === 'light' ? 20 : config.animation_intensity === 'medium' ? 40 : 80;
             generateParticles(particleCount);
             
             if(config.neon_glow) document.querySelectorAll('.glass-card').forEach(c => c.classList.add('neon-glow'));
-        }
+        }}
         
-        let chatHistory = [];
-        async function initAIChat(welcomeMsg) {
+        function initAIChat(welcomeMsg) {{
             const chatDiv = document.getElementById('chatMessages');
-            chatDiv.innerHTML = `<div class="text-gray-300 mb-2"><i class="fas fa-robot mr-2"></i>${welcomeMsg || 'Hello! How can I help you?'}</div>`;
-        }
+            chatDiv.innerHTML = `<div class="text-gray-300 mb-2"><i class="fas fa-robot mr-2"></i>${{welcomeMsg}}</div>`;
+        }}
         
-        async function sendAIMessage() {
+        async function sendAIMessage() {{
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             if(!message) return;
             
             const chatDiv = document.getElementById('chatMessages');
-            chatDiv.innerHTML += `<div class="text-blue-400 mt-2"><i class="fas fa-user mr-2"></i>${escapeHtml(message)}</div>`;
+            chatDiv.innerHTML += `<div class="text-blue-400 mt-2"><i class="fas fa-user mr-2"></i>${{escapeHtml(message)}}</div>`;
             input.value = '';
             chatDiv.scrollTop = chatDiv.scrollHeight;
             
             chatDiv.innerHTML += `<div class="text-gray-400 mt-2"><i class="fas fa-spinner fa-spin mr-2"></i>Thinking...</div>`;
             chatDiv.scrollTop = chatDiv.scrollHeight;
             
-            try {
-                const res = await fetch('/api/ai/chat', {
+            try {{
+                const res = await fetch('/api/ai/chat', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{ message: message }})
+                }});
                 const data = await res.json();
-                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\/div>/, '');
-                chatDiv.innerHTML += `<div class="text-green-400 mt-2"><i class="fas fa-robot mr-2"></i>${escapeHtml(data.response)}</div>`;
-            } catch(e) {
-                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\/div>/, '');
+                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\\/div>/, '');
+                chatDiv.innerHTML += `<div class="text-green-400 mt-2"><i class="fas fa-robot mr-2"></i>${{escapeHtml(data.response)}}</div>`;
+            }} catch(e) {{
+                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\\/div>/, '');
                 chatDiv.innerHTML += `<div class="text-red-400 mt-2"><i class="fas fa-exclamation-circle mr-2"></i>Error connecting to AI</div>`;
-            }
+            }}
             chatDiv.scrollTop = chatDiv.scrollHeight;
-        }
+        }}
         
         document.getElementById('sendChatBtn')?.addEventListener('click', sendAIMessage);
-        document.getElementById('chatInput')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendAIMessage(); });
+        document.getElementById('chatInput')?.addEventListener('keypress', (e) => {{ if(e.key === 'Enter') sendAIMessage(); }});
         
-        function generateParticles(count) {
+        function generateParticles(count) {{
             const container = document.getElementById('particles');
             if(!container) return;
             container.innerHTML = '';
-            for(let i = 0; i < count; i++) {
+            for(let i = 0; i < count; i++) {{
                 const p = document.createElement('div');
                 p.className = 'particle';
                 const s = Math.random() * 8 + 2;
@@ -1206,21 +1156,21 @@ def get_html_content():
                 p.style.animationDuration = Math.random() * 10 + 5 + 's';
                 p.style.animationDelay = Math.random() * 10 + 's';
                 container.appendChild(p);
-            }
-        }
+            }}
+        }}
         
-        async function loadReviews() {
+        async function loadReviews() {{
             const res = await fetch('/api/reviews');
             const data = await res.json();
             const reviews = data.reviews;
             const container = document.getElementById('reviewsList');
-            if(reviews.length === 0) { container.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fas fa-cloud fa-3x mb-2"></i><p>No reviews yet!</p></div>'; return; }
-            container.innerHTML = reviews.map(r => `<div class="review-card"><div class="flex justify-between items-start"><div><i class="fas fa-user-circle text-purple-400 mr-2"></i><span class="font-semibold text-white">${escapeHtml(r.username)}</span> ${r.verified ? '<i class="fas fa-check-circle text-green-400"></i>' : ''}</div><div class="text-yellow-400">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div></div><h3 class="text-white font-bold mt-2">${escapeHtml(r.title)}</h3><p class="text-gray-300 text-sm mt-1">${escapeHtml(r.comment)}</p><div class="text-gray-500 text-xs mt-2 flex justify-between"><span><i class="far fa-clock"></i> ${new Date(r.timestamp).toLocaleDateString()}</span>${isAdmin ? `<button onclick="deleteReview(${r.id})" class="text-red-400 hover:text-red-300"><i class="fas fa-trash-alt"></i></button>` : ''}</div></div>`).join('');
-        }
+            if(reviews.length === 0) {{ container.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fas fa-cloud fa-3x mb-2"></i><p>No reviews yet!</p></div>'; return; }}
+            container.innerHTML = reviews.map(r => `<div class="review-card"><div class="flex justify-between items-start"><div><i class="fas fa-user-circle text-purple-400 mr-2"></i><span class="font-semibold text-white">${{escapeHtml(r.username)}}</span> ${{r.verified ? '<i class="fas fa-check-circle text-green-400"></i>' : ''}}</div><div class="text-yellow-400">${{'★'.repeat(r.rating)}}${{'☆'.repeat(5-r.rating)}}</div></div><h3 class="text-white font-bold mt-2">${{escapeHtml(r.title)}}</h3><p class="text-gray-300 text-sm mt-1">${{escapeHtml(r.comment)}}</p><div class="text-gray-500 text-xs mt-2 flex justify-between"><span><i class="far fa-clock"></i> ${{new Date(r.timestamp).toLocaleDateString()}}</span>${{isAdmin ? `<button onclick="deleteReview(${{r.id}})" class="text-red-400 hover:text-red-300"><i class="fas fa-trash-alt"></i></button>` : ''}}</div></div>`).join('');
+        }}
         
-        async function deleteReview(id) { if(confirm('Delete this review?')) { await fetch(`/api/reviews/${id}`, {method: 'DELETE'}); loadReviews(); loadStats(); showToast('Review deleted', 'info'); } }
+        async function deleteReview(id) {{ if(confirm('Delete this review?')) {{ await fetch(`/api/reviews/${{id}}`, {{method: 'DELETE'}}); loadReviews(); loadStats(); showToast('Review deleted', 'info'); }} }}
         
-        async function loadStats() {
+        async function loadStats() {{
             const res = await fetch('/api/stats');
             const stats = await res.json();
             document.getElementById('totalReviews').innerText = stats.total;
@@ -1230,33 +1180,33 @@ def get_html_content():
             document.getElementById('bestPercentage').innerHTML = stats.best_rating_percentage + '%';
             document.getElementById('monitorBarFill').style.width = stats.best_rating_percentage + '%';
             const trendDiv = document.getElementById('trendIndicator');
-            if(stats.trend === 'up') trendDiv.innerHTML = `<i class="fas fa-arrow-up trend-up"></i> +${stats.trend_percentage}%`;
-            else if(stats.trend === 'down') trendDiv.innerHTML = `<i class="fas fa-arrow-down trend-down"></i> -${stats.trend_percentage}%`;
-            else trendDiv.innerHTML = `<i class="fas fa-minus-circle"></i> ${stats.trend_percentage}%`;
+            if(stats.trend === 'up') trendDiv.innerHTML = `<i class="fas fa-arrow-up trend-up"></i> +${{stats.trend_percentage}}%`;
+            else if(stats.trend === 'down') trendDiv.innerHTML = `<i class="fas fa-arrow-down trend-down"></i> -${{stats.trend_percentage}}%`;
+            else trendDiv.innerHTML = `<i class="fas fa-minus-circle"></i> ${{stats.trend_percentage}}%`;
             document.getElementById('weeklyGrowth').innerHTML = (stats.weekly_growth >= 0 ? '+' : '') + stats.weekly_growth + '%';
             document.getElementById('sentimentScore').innerHTML = stats.sentiment_score;
             if(chart) chart.destroy();
-            chart = new Chart(document.getElementById('ratingChart'), { type: 'bar', data: { labels: ['5★', '4★', '3★', '2★', '1★'], datasets: [{ label: 'Reviews', data: [stats.five_star, stats.four_star, stats.three_star, stats.two_star, stats.one_star], backgroundColor: 'rgba(102, 126, 234, 0.6)', borderRadius: 8 }] }, options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } } });
-        }
+            chart = new Chart(document.getElementById('ratingChart'), {{ type: 'bar', data: {{ labels: ['5★', '4★', '3★', '2★', '1★'], datasets: [{{ label: 'Reviews', data: [stats.five_star, stats.four_star, stats.three_star, stats.two_star, stats.one_star], backgroundColor: 'rgba(102, 126, 234, 0.6)', borderRadius: 8 }}] }}, options: {{ responsive: true, plugins: {{ legend: {{ labels: {{ color: 'white' }} }} }} }} }});
+        }}
         
-        document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+        document.getElementById('reviewForm').addEventListener('submit', async (e) => {{
             e.preventDefault();
-            if(currentRating === 0) { showToast('Select a rating', 'error'); return; }
-            const review = { username: document.getElementById('username').value, rating: currentRating, title: document.getElementById('title').value, comment: document.getElementById('comment').value };
-            const res = await fetch('/api/reviews', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(review) });
-            if(res.ok) { showToast('Review submitted!', 'success'); document.getElementById('reviewForm').reset(); document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star text-gray-400'); currentRating = 0; loadReviews(); loadStats(); }
+            if(currentRating === 0) {{ showToast('Select a rating', 'error'); return; }}
+            const review = {{ username: document.getElementById('username').value, rating: currentRating, title: document.getElementById('title').value, comment: document.getElementById('comment').value }};
+            const res = await fetch('/api/reviews', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}}, body: JSON.stringify(review) }});
+            if(res.ok) {{ showToast('Review submitted!', 'success'); document.getElementById('reviewForm').reset(); document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star text-gray-400'); currentRating = 0; loadReviews(); loadStats(); }}
             else showToast('Error', 'error');
-        });
+        }});
         
-        function showToast(msg, type) { const toast = document.getElementById('toast'); toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>${msg}`; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }
-        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+        function showToast(msg, type) {{ const toast = document.getElementById('toast'); toast.innerHTML = `<i class="fas ${{type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}} mr-2"></i>${{msg}}`; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3000); }}
+        function escapeHtml(str) {{ if(!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }}
         
         loadSavedTheme();
         checkAdminStatus();
         loadConfig();
         loadReviews();
         loadStats();
-        setInterval(() => { loadStats(); loadReviews(); }, 30000);
+        setInterval(() => {{ loadStats(); loadReviews(); }}, 30000);
     </script>
     {config.get("custom_js", "")}
 </body>
