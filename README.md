@@ -62,12 +62,19 @@
 
 ## 📁 Project Structure
 vectocloud-review/
+
 ├── review.py # FastAPI application (backend + frontend)
+
 ├── requirements.txt # Python dependencies
+
 ├── render.yaml # Render Blueprint (Infrastructure as Code)
+
 ├── .gitignore # Ignore local & temporary files
+
 ├── reviews.json # Auto-created on first run (persistent storage)
+
 └── ui_config.json # Auto-created on first run (UI settings)
+
 
 text
 
