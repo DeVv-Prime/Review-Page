@@ -9,14 +9,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, validator
 import uvicorn
 
-# Try to import httpx, but make it optional
-try:
-    import httpx
-    HAS_HTTPX = True
-except ImportError:
-    HAS_HTTPX = False
-    print("Warning: httpx not installed. AI chat will use mock responses.")
-
 # ---------- Data Models ----------
 class ReviewCreate(BaseModel):
     username: str = Field(..., min_length=2, max_length=50)
@@ -34,50 +26,24 @@ class AdminLogin(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=4, max_length=100)
 
-class AIChatRequest(BaseModel):
-    message: str
-    api_key: Optional[str] = None
-    model: str = "gpt-3.5-turbo"
-
 class UIConfig(BaseModel):
-    background_type: str = "video"
-    background_url: str = "https://motionbgs.com/media/9268/minecraft-snowy-campfire.960x540.mp4"
+    background_type: str = "gif"
+    background_url: str = "https://media1.tenor.com/m/Om7RT3ydUrcAAAAd/minecraft-sunset-minecraft-face-off.gif"
     gradient_start: str = "#0f0c29"
     gradient_mid: str = "#302b63"
     gradient_end: str = "#24243e"
     solid_color: str = "#0a0c12"
     neon_glow: bool = True
     animation_intensity: str = "medium"
-    particle_count: int = 40
-    ai_api_key: str = ""
-    ai_model: str = "gpt-3.5-turbo"
-    ai_enabled: bool = True
-    ai_welcome_message: str = "Hello! I'm VectoCloud AI Assistant. How can I help you today?"
     discord_link: str = "https://discord.gg/vectocloud"
     website_link: str = "https://vectocloud.com"
     website_button_text: str = "Visit Our Website"
-    website_name: str = "VectoCloud Official"
-    website_description: str = "Next-generation cloud platform for modern businesses"
     site_title: str = "VectoCloud"
     site_subtitle: str = "Advanced Review Intelligence Platform"
     primary_color: str = "#667eea"
     secondary_color: str = "#764ba2"
-    accent_color: str = "#f472b6"
     theme_mode: str = "dark"
-    font_family: str = "Inter"
-    border_radius: str = "1rem"
-    enable_analytics: bool = True
-    enable_ai_chat: bool = True
-    auto_refresh_interval: int = 30
-    reviews_per_page: int = 10
-    enable_verified_badge: bool = True
-    enable_delete_button: bool = True
     enable_website_button: bool = True
-    enable_floating_particles: bool = True
-    custom_css: str = ""
-    custom_js: str = ""
-    favicon_url: str = ""
-    logo_url: str = ""
     footer_text: str = "© 2024 VectoCloud. All rights reserved."
 
 # ---------- Persistence Layer ----------
@@ -92,7 +58,7 @@ def load_reviews() -> List[dict]:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
             return data if isinstance(data, list) else []
-    except (json.JSONDecodeError, IOError):
+    except:
         return []
 
 def save_reviews(reviews: List[dict]):
@@ -102,44 +68,23 @@ def save_reviews(reviews: List[dict]):
 def load_ui_config() -> dict:
     if not os.path.exists(CONFIG_FILE):
         default_config = {
-            "background_type": "video",
-            "background_url": "https://motionbgs.com/media/9268/minecraft-snowy-campfire.960x540.mp4",
+            "background_type": "gif",
+            "background_url": "https://media1.tenor.com/m/Om7RT3ydUrcAAAAd/minecraft-sunset-minecraft-face-off.gif",
             "gradient_start": "#0f0c29",
             "gradient_mid": "#302b63",
             "gradient_end": "#24243e",
             "solid_color": "#0a0c12",
             "neon_glow": True,
             "animation_intensity": "medium",
-            "particle_count": 40,
-            "ai_api_key": "",
-            "ai_model": "gpt-3.5-turbo",
-            "ai_enabled": True,
-            "ai_welcome_message": "Hello! I'm VectoCloud AI Assistant. How can I help you today?",
             "discord_link": "https://discord.gg/vectocloud",
             "website_link": "https://vectocloud.com",
             "website_button_text": "Visit Our Website",
-            "website_name": "VectoCloud Official",
-            "website_description": "Next-generation cloud platform for modern businesses",
             "site_title": "VectoCloud",
             "site_subtitle": "Advanced Review Intelligence Platform",
             "primary_color": "#667eea",
             "secondary_color": "#764ba2",
-            "accent_color": "#f472b6",
             "theme_mode": "dark",
-            "font_family": "Inter",
-            "border_radius": "1rem",
-            "enable_analytics": True,
-            "enable_ai_chat": True,
-            "auto_refresh_interval": 30,
-            "reviews_per_page": 10,
-            "enable_verified_badge": True,
-            "enable_delete_button": True,
             "enable_website_button": True,
-            "enable_floating_particles": True,
-            "custom_css": "",
-            "custom_js": "",
-            "favicon_url": "",
-            "logo_url": "",
             "footer_text": "© 2024 VectoCloud. All rights reserved."
         }
         save_ui_config(default_config)
@@ -170,21 +115,18 @@ def load_admin_config() -> dict:
     except:
         return {}
 
-def save_admin_config(config: dict):
-    with open(ADMIN_FILE, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2)
-
 # ---------- FastAPI App ----------
-app = FastAPI(title="VectoCloud Review Hub", version="5.0")
+app = FastAPI(title="VectoCloud Review Hub")
 
 def get_next_id(reviews: List[dict]) -> int:
     return max([r["id"] for r in reviews], default=0) + 1
 
-def compute_advanced_stats(reviews: List[dict]):
+def compute_stats(reviews: List[dict]):
     if not reviews:
         return {
-            "total": 0, "avg_rating": 0, "five_star": 0, "four_star": 0, "three_star": 0, "two_star": 0, "one_star": 0,
-            "verified_count": 0, "best_rating_percentage": 0, "trend": "stable", "trend_percentage": 0,
+            "total": 0, "avg_rating": 0, "five_star": 0, "four_star": 0, 
+            "three_star": 0, "two_star": 0, "one_star": 0, "verified_count": 0,
+            "best_rating_percentage": 0, "trend": "stable", "trend_percentage": 0,
             "weekly_growth": 0, "sentiment_score": 0, "response_rate": 0
         }
     
@@ -196,23 +138,18 @@ def compute_advanced_stats(reviews: List[dict]):
     one_star = sum(1 for r in reviews if r["rating"] == 1)
     avg_rating = sum(r["rating"] for r in reviews) / total
     verified_count = sum(1 for r in reviews if r.get("verified", False))
-    
     best_rating_percentage = round((five_star / total) * 100, 1)
     
+    # Calculate weekly growth
     now = datetime.now()
-    last_week = []
-    previous_week = []
+    last_week = [r for r in reviews if datetime.fromisoformat(r["timestamp"]) > now - timedelta(days=7)]
+    previous_week = [r for r in reviews if now - timedelta(days=14) < datetime.fromisoformat(r["timestamp"]) <= now - timedelta(days=7)]
     
-    for r in reviews:
-        try:
-            r_time = datetime.fromisoformat(r["timestamp"])
-            if r_time > now - timedelta(days=7):
-                last_week.append(r)
-            elif now - timedelta(days=14) < r_time <= now - timedelta(days=7):
-                previous_week.append(r)
-        except:
-            pass
+    last_week_count = len(last_week)
+    previous_week_count = len(previous_week)
+    weekly_growth = round(((last_week_count - previous_week_count) / (previous_week_count or 1)) * 100, 1)
     
+    # Calculate trend
     last_week_avg = sum(r["rating"] for r in last_week) / len(last_week) if last_week else 0
     previous_week_avg = sum(r["rating"] for r in previous_week) / len(previous_week) if previous_week else 0
     
@@ -223,10 +160,6 @@ def compute_advanced_stats(reviews: List[dict]):
         trend_change = ((last_week_avg - previous_week_avg) / previous_week_avg) * 100
         trend = "up" if trend_change > 5 else "down" if trend_change < -5 else "stable"
         trend_percentage = abs(round(trend_change, 1))
-    
-    last_week_count = len(last_week)
-    previous_week_count = len(previous_week)
-    weekly_growth = round(((last_week_count - previous_week_count) / (previous_week_count or 1)) * 100, 1)
     
     sentiment_score = round((avg_rating / 5) * 100, 1)
     response_rate = round(min(85, 50 + (avg_rating * 7)), 1)
@@ -257,40 +190,6 @@ def verify_admin(username: str, password: str) -> bool:
 def verify_session(token: str) -> bool:
     admin = load_admin_config()
     return token == admin.get("session_token")
-
-# ---------- AI Chat Integration ----------
-async def call_ai_api(message: str, api_key: str, model: str) -> str:
-    if not HAS_HTTPX:
-        return "ℹ️ AI chat is available. Please add your OpenAI API key in the Admin Panel under AI Settings."
-    
-    if not api_key:
-        return "⚠️ AI API key not configured. Please add your OpenAI API key in the Admin Panel under AI Settings."
-    
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": "You are VectoCloud AI Assistant, a helpful assistant for a review management platform. Keep responses concise and friendly."},
-                        {"role": "user", "content": message}
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": 500
-                }
-            )
-            if response.status_code == 200:
-                data = response.json()
-                return data["choices"][0]["message"]["content"]
-            else:
-                return f"❌ AI Error: {response.status_code}. Please check your API key."
-    except Exception as e:
-        return f"❌ Connection error: {str(e)[:100]}"
 
 # ---------- API Endpoints ----------
 @app.get("/", response_class=HTMLResponse)
@@ -326,12 +225,10 @@ async def verify_admin_session(admin_token: Optional[str] = Cookie(None)):
     return {"authenticated": False}
 
 @app.get("/api/reviews")
-async def get_reviews(limit: int = 50, offset: int = 0):
+async def get_reviews():
     reviews = load_reviews()
     reviews.sort(key=lambda x: x["id"], reverse=True)
-    total = len(reviews)
-    paginated = reviews[offset:offset + limit]
-    return {"reviews": paginated, "total": total, "limit": limit, "offset": offset}
+    return {"reviews": reviews, "total": len(reviews)}
 
 @app.post("/api/reviews")
 async def create_review(review_data: ReviewCreate):
@@ -366,7 +263,7 @@ async def delete_review(review_id: int, admin_token: Optional[str] = Cookie(None
 @app.get("/api/stats")
 async def get_stats():
     reviews = load_reviews()
-    return compute_advanced_stats(reviews)
+    return compute_stats(reviews)
 
 @app.get("/api/ui-config")
 async def get_ui_config():
@@ -378,15 +275,6 @@ async def update_ui_config(config: UIConfig, admin_token: Optional[str] = Cookie
         raise HTTPException(status_code=401, detail="Admin access required")
     save_ui_config(config.dict())
     return {"success": True, "config": config.dict()}
-
-@app.post("/api/ai/chat")
-async def ai_chat(request: AIChatRequest, admin_token: Optional[str] = Cookie(None)):
-    config = load_ui_config()
-    api_key = request.api_key or config.get("ai_api_key", "")
-    model = request.model or config.get("ai_model", "gpt-3.5-turbo")
-    
-    response = await call_ai_api(request.message, api_key, model)
-    return {"response": response}
 
 # ---------- HTML Content ----------
 def get_admin_login_html():
@@ -529,7 +417,7 @@ def get_admin_html_content():
             min-height: 100vh;
             color: white;
         }
-        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
         .header {
             display: flex;
             justify-content: space-between;
@@ -550,7 +438,7 @@ def get_admin_html_content():
         .glass-card h2 { margin-bottom: 1rem; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem; }
-        .form-group input, .form-group select, .form-group textarea {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 0.7rem;
             background: rgba(255,255,255,0.1);
@@ -559,8 +447,8 @@ def get_admin_html_content():
             color: white;
             font-size: 0.9rem;
         }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; }
         button {
             background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
@@ -572,18 +460,8 @@ def get_admin_html_content():
             transition: transform 0.2s;
         }
         button:hover { transform: scale(1.02); }
-        .nav-links {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: background 0.2s;
-        }
+        .nav-links { display: flex; gap: 1rem; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background 0.2s; }
         .nav-links a:hover { background: rgba(255,255,255,0.1); }
         .toast {
             position: fixed;
@@ -598,12 +476,20 @@ def get_admin_html_content():
             z-index: 1000;
         }
         .toast.show { transform: translateX(0); }
+        .bg-preview {
+            background: rgba(0,0,0,0.3);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #a78bfa;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-crown mr-2"></i>VectoCloud Admin Dashboard</h1>
+            <h1><i class="fas fa-crown mr-2"></i>VectoCloud Admin</h1>
             <div class="nav-links">
                 <a href="/"><i class="fas fa-home"></i> Review Page</a>
                 <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -616,54 +502,24 @@ def get_admin_html_content():
                 <div class="form-group">
                     <label>Background Type</label>
                     <select id="bgType">
-                        <option value="video">Video Background</option>
+                        <option value="gif">GIF Background</option>
                         <option value="image">Image Background</option>
                         <option value="gradient">Gradient Background</option>
                         <option value="solid">Solid Color</option>
                     </select>
                 </div>
                 <div class="form-group" id="urlGroup">
-                    <label>URL (Video or Image)</label>
-                    <input type="text" id="bgUrl" placeholder="https://example.com/background.mp4">
+                    <label>URL (GIF or Image)</label>
+                    <input type="text" id="bgUrl" placeholder="https://media1.tenor.com/m/Om7RT3ydUrcAAAAd/minecraft-sunset-minecraft-face-off.gif">
+                    <div class="bg-preview"><i class="fas fa-info-circle"></i> Tenor GIFs work perfectly!</div>
                 </div>
                 <div class="form-group" id="gradientGroup" style="display:none">
-                    <label>Gradient Start</label>
-                    <input type="color" id="gradStart">
-                    <label style="margin-top:0.5rem">Gradient Mid</label>
-                    <input type="color" id="gradMid">
-                    <label style="margin-top:0.5rem">Gradient End</label>
-                    <input type="color" id="gradEnd">
+                    <label>Gradient Start</label><input type="color" id="gradStart">
+                    <label style="margin-top:0.5rem">Gradient Mid</label><input type="color" id="gradMid">
+                    <label style="margin-top:0.5rem">Gradient End</label><input type="color" id="gradEnd">
                 </div>
                 <div class="form-group" id="solidGroup" style="display:none">
-                    <label>Solid Color</label>
-                    <input type="color" id="solidColor">
-                </div>
-            </div>
-            
-            <div class="glass-card">
-                <h2><i class="fas fa-robot"></i> AI Chat Settings</h2>
-                <div class="form-group">
-                    <label>Enable AI Chat</label>
-                    <select id="aiEnabled">
-                        <option value="true">Enabled</option>
-                        <option value="false">Disabled</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>OpenAI API Key</label>
-                    <input type="password" id="apiKey" placeholder="sk-...">
-                    <small style="color: rgba(255,255,255,0.5); display: block; margin-top: 0.3rem;">Get from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #667eea;">OpenAI Platform</a></small>
-                </div>
-                <div class="form-group">
-                    <label>AI Model</label>
-                    <select id="aiModel">
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        <option value="gpt-4">GPT-4</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Welcome Message</label>
-                    <input type="text" id="welcomeMsg" placeholder="Hello! How can I help you?">
+                    <label>Solid Color</label><input type="color" id="solidColor">
                 </div>
             </div>
             
@@ -678,7 +534,7 @@ def get_admin_html_content():
             </div>
             
             <div class="glass-card">
-                <h2><i class="fas fa-palette"></i> Theme & Personalization</h2>
+                <h2><i class="fas fa-palette"></i> Theme & Effects</h2>
                 <div class="form-group"><label>Theme Mode</label><select id="themeMode"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></div>
                 <div class="form-group"><label>Primary Color</label><input type="color" id="primaryColor"></div>
                 <div class="form-group"><label>Secondary Color</label><input type="color" id="secondaryColor"></div>
@@ -693,9 +549,7 @@ def get_admin_html_content():
             <button id="saveAllBtn" style="width: 100%;"><i class="fas fa-save mr-2"></i> Save Configuration</button>
         </div>
     </div>
-    
     <div id="toast" class="toast"></div>
-    
     <script>
         async function checkAuth() {
             const res = await fetch('/api/admin/verify');
@@ -706,7 +560,7 @@ def get_admin_html_content():
         
         function toggleBgSettings() {
             const type = document.getElementById('bgType').value;
-            document.getElementById('urlGroup').style.display = (type === 'video' || type === 'image') ? 'block' : 'none';
+            document.getElementById('urlGroup').style.display = (type === 'gif' || type === 'image') ? 'block' : 'none';
             document.getElementById('gradientGroup').style.display = type === 'gradient' ? 'block' : 'none';
             document.getElementById('solidGroup').style.display = type === 'solid' ? 'block' : 'none';
         }
@@ -714,17 +568,12 @@ def get_admin_html_content():
         async function loadConfig() {
             const res = await fetch('/api/ui-config');
             const config = await res.json();
-            
-            document.getElementById('bgType').value = config.background_type || 'video';
+            document.getElementById('bgType').value = config.background_type || 'gif';
             document.getElementById('bgUrl').value = config.background_url || '';
             document.getElementById('gradStart').value = config.gradient_start || '#0f0c29';
             document.getElementById('gradMid').value = config.gradient_mid || '#302b63';
             document.getElementById('gradEnd').value = config.gradient_end || '#24243e';
             document.getElementById('solidColor').value = config.solid_color || '#0a0c12';
-            document.getElementById('aiEnabled').value = String(config.ai_enabled !== false);
-            document.getElementById('apiKey').value = config.ai_api_key || '';
-            document.getElementById('aiModel').value = config.ai_model || 'gpt-3.5-turbo';
-            document.getElementById('welcomeMsg').value = config.ai_welcome_message || '';
             document.getElementById('discordLink').value = config.discord_link || '';
             document.getElementById('websiteLink').value = config.website_link || '';
             document.getElementById('websiteBtnText').value = config.website_button_text || '';
@@ -737,30 +586,21 @@ def get_admin_html_content():
             document.getElementById('neonGlow').value = String(config.neon_glow !== false);
             document.getElementById('animIntensity').value = config.animation_intensity || 'medium';
             document.getElementById('footerText').value = config.footer_text || '';
-            
             toggleBgSettings();
         }
         
         document.getElementById('bgType').addEventListener('change', toggleBgSettings);
         
         async function saveConfig() {
-            const bgType = document.getElementById('bgType').value;
-            let bgUrl = document.getElementById('bgUrl').value;
-            
             const config = {
-                background_type: bgType,
-                background_url: bgUrl,
+                background_type: document.getElementById('bgType').value,
+                background_url: document.getElementById('bgUrl').value,
                 gradient_start: document.getElementById('gradStart').value,
                 gradient_mid: document.getElementById('gradMid').value,
                 gradient_end: document.getElementById('gradEnd').value,
                 solid_color: document.getElementById('solidColor').value,
                 neon_glow: document.getElementById('neonGlow').value === 'true',
                 animation_intensity: document.getElementById('animIntensity').value,
-                particle_count: 40,
-                ai_api_key: document.getElementById('apiKey').value,
-                ai_model: document.getElementById('aiModel').value,
-                ai_enabled: document.getElementById('aiEnabled').value === 'true',
-                ai_welcome_message: document.getElementById('welcomeMsg').value,
                 discord_link: document.getElementById('discordLink').value,
                 website_link: document.getElementById('websiteLink').value,
                 website_button_text: document.getElementById('websiteBtnText').value,
@@ -770,33 +610,15 @@ def get_admin_html_content():
                 theme_mode: document.getElementById('themeMode').value,
                 primary_color: document.getElementById('primaryColor').value,
                 secondary_color: document.getElementById('secondaryColor').value,
-                accent_color: "#f472b6",
-                font_family: "Inter",
-                border_radius: "1rem",
-                footer_text: document.getElementById('footerText').value,
-                enable_analytics: true,
-                auto_refresh_interval: 30,
-                reviews_per_page: 10,
-                enable_verified_badge: true,
-                enable_delete_button: true,
-                enable_floating_particles: true,
-                custom_css: "",
-                custom_js: "",
-                favicon_url: "",
-                logo_url: ""
+                footer_text: document.getElementById('footerText').value
             };
-            
             const res = await fetch('/api/ui-config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(config)
             });
-            
-            if(res.ok) {
-                showToast('Settings saved successfully!', 'success');
-            } else {
-                showToast('Error saving settings', 'error');
-            }
+            if(res.ok) showToast('Settings saved! Page will refresh.', 'success');
+            else showToast('Error saving settings', 'error');
         }
         
         document.getElementById('saveAllBtn').addEventListener('click', saveConfig);
@@ -811,7 +633,6 @@ def get_admin_html_content():
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
-        
         checkAuth();
     </script>
 </body>
@@ -819,21 +640,22 @@ def get_admin_html_content():
 
 def get_html_content():
     config = load_ui_config()
-    bg_type = config.get("background_type", "video")
-    bg_url = config.get("background_url", "https://motionbgs.com/media/9268/minecraft-snowy-campfire.960x540.mp4")
+    bg_type = config.get("background_type", "gif")
+    bg_url = config.get("background_url", "https://media1.tenor.com/m/Om7RT3ydUrcAAAAd/minecraft-sunset-minecraft-face-off.gif")
     
-    bg_style = ""
-    if bg_type == "video":
-        bg_style = f'<video autoplay muted loop playsinline style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-2;"><source src="{bg_url}" type="video/mp4"></video>'
+    # Background style based on type
+    if bg_type == "gif":
+        bg_style = f'<img src="{bg_url}" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-2;" alt="background">'
     elif bg_type == "image":
-        bg_style = f'<div class="animated-bg" style="background-image: url(\'{bg_url}\'); position:fixed; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; z-index:-2;"></div>'
+        bg_style = f'<img src="{bg_url}" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-2;" alt="background">'
     elif bg_type == "gradient":
-        bg_style = f'<div class="gradient-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, {config.get("gradient_start", "#0f0c29")} 0%, {config.get("gradient_mid", "#302b63")} 50%, {config.get("gradient_end", "#24243e")} 100%); z-index:-2;"></div>'
+        bg_style = f'<div style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, {config.get("gradient_start", "#0f0c29")} 0%, {config.get("gradient_mid", "#302b63")} 50%, {config.get("gradient_end", "#24243e")} 100%); z-index:-2;"></div>'
     else:
-        bg_style = f'<div class="gradient-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background: {config.get("solid_color", "#0a0c12")}; z-index:-2;"></div>'
+        bg_style = f'<div style="position:fixed; top:0; left:0; width:100%; height:100%; background: {config.get("solid_color", "#0a0c12")}; z-index:-2;"></div>'
     
     website_btn_style = "block" if config.get("enable_website_button", True) else "none"
-    ai_chat_style = "block" if config.get("ai_enabled", True) else "none"
+    primary = config.get("primary_color", "#667eea")
+    secondary = config.get("secondary_color", "#764ba2")
     
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -841,13 +663,13 @@ def get_html_content():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{config.get("site_title", "VectoCloud")} | Review Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family={config.get("font_family", "Inter")}:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: '{config.get("font_family", "Inter")}', sans-serif;
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
@@ -857,15 +679,15 @@ def get_html_content():
         .particle {{ position: absolute; background: rgba(255,255,255,0.15); border-radius: 50%; pointer-events: none; animation: floatParticle linear infinite; }}
         @keyframes floatParticle {{ 0% {{ transform: translateY(100vh) rotate(0deg); opacity: 0; }} 10% {{ opacity: 0.6; }} 90% {{ opacity: 0.6; }} 100% {{ transform: translateY(-20vh) rotate(360deg); opacity: 0; }} }}
         .container {{ max-width: 1400px; margin: 0 auto; padding: 2rem; }}
-        .glass-card {{ background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border-radius: {config.get("border_radius", "1rem")}; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; }}
+        .glass-card {{ background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease, box-shadow 0.3s ease; }}
         .glass-card:hover {{ transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }}
-        .neon-glow {{ box-shadow: 0 0 20px {config.get("primary_color", "#667eea")}, 0 0 40px {config.get("primary_color", "#667eea")}; }}
-        .btn-primary {{ background: linear-gradient(135deg, {config.get("primary_color", "#667eea")} 0%, {config.get("secondary_color", "#764ba2")} 100%); border: none; transition: all 0.3s ease; cursor: pointer; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; }}
+        .neon-glow {{ box-shadow: 0 0 20px {primary}, 0 0 40px {primary}; }}
+        .btn-primary {{ background: linear-gradient(135deg, {primary} 0%, {secondary} 100%); border: none; transition: all 0.3s ease; cursor: pointer; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; }}
         .btn-primary:hover {{ transform: scale(1.02); filter: brightness(1.05); }}
         .btn-website {{ background: linear-gradient(135deg, #10b981, #059669); border: none; transition: all 0.3s ease; cursor: pointer; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }}
         .star-rating i {{ cursor: pointer; transition: transform 0.2s; }}
         .star-rating i:hover {{ transform: scale(1.2); }}
-        .review-card {{ background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1.5rem; padding: 1.5rem; transition: all 0.3s ease; }}
+        .review-card {{ background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1rem; padding: 1.5rem; transition: all 0.3s ease; margin-bottom: 1rem; }}
         .review-card:hover {{ background: rgba(255,255,255,0.15); transform: translateX(5px); }}
         .toast-notif {{ position: fixed; bottom: 2rem; right: 2rem; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); padding: 1rem 1.5rem; border-radius: 1rem; color: white; z-index: 1000; transform: translateX(400px); transition: transform 0.3s ease; }}
         .toast-notif.show {{ transform: translateX(0); }}
@@ -876,7 +698,7 @@ def get_html_content():
         @keyframes shimmer {{ 0% {{ transform: translateX(-100%); }} 100% {{ transform: translateX(100%); }} }}
         .trend-up {{ color: #10b981; }}
         .trend-down {{ color: #ef4444; }}
-        .metric-card {{ background: rgba(255,255,255,0.05); border-radius: 1rem; padding: 1rem; transition: all 0.3s ease; }}
+        .metric-card {{ background: rgba(255,255,255,0.05); border-radius: 1rem; padding: 1rem; transition: all 0.3s ease; text-align: center; }}
         .metric-card:hover {{ background: rgba(255,255,255,0.1); transform: translateY(-3px); }}
         .dropdown {{ position: relative; display: inline-block; }}
         .dropdown-content {{ display: none; position: absolute; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); min-width: 200px; border-radius: 1rem; z-index: 1; right: 0; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.2); }}
@@ -905,20 +727,20 @@ def get_html_content():
         .text-3xl {{ font-size: 1.875rem; }}
         .font-bold {{ font-weight: 700; }}
         .mr-2 {{ margin-right: 0.5rem; }}
-        .ml-auto {{ margin-left: auto; }}
+        .ml-2 {{ margin-left: 0.5rem; }}
         .cursor-pointer {{ cursor: pointer; }}
-        .bg-gradient-to-r {{ background-image: linear-gradient(to right, var(--tw-gradient-stops)); }}
-        .from-purple-400 {{ --tw-gradient-from: #c084fc; }}
-        .to-pink-400 {{ --tw-gradient-to: #f472b6; }}
+        .bg-gradient-to-r {{ background-image: linear-gradient(to right, #c084fc, #f472b6); }}
         .bg-clip-text {{ background-clip: text; }}
         .text-transparent {{ color: transparent; }}
+        .max-h-96 {{ max-height: 24rem; }}
+        .overflow-y-auto {{ overflow-y: auto; }}
+        .space-y-3 > * + * {{ margin-top: 0.75rem; }}
         
-        body.light-theme {{ background: #f5f5f5; }}
         body.light-theme .glass-card {{ background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }}
         body.light-theme .text-white {{ color: #1a1a1a; }}
         body.light-theme .text-gray-300 {{ color: #4a4a4a; }}
+        body.light-theme .review-card {{ background: rgba(0,0,0,0.05); }}
     </style>
-    {config.get("custom_css", "")}
 </head>
 <body id="appBody">
     <div class="floating-particles" id="particles"></div>
@@ -926,8 +748,8 @@ def get_html_content():
     <div class="container">
         <div class="flex justify-between items-center mb-5">
             <div>
-                <i class="fas fa-cloud-upload-alt text-4xl mb-2" style="color: {config.get('primary_color', '#667eea')};"></i>
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" id="siteTitle">{config.get("site_title", "VectoCloud")}</h1>
+                <i class="fas fa-cloud-upload-alt text-4xl mb-2" style="color: {primary};"></i>
+                <h1 class="text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent" id="siteTitle">{config.get("site_title", "VectoCloud")}</h1>
                 <p class="text-gray-300 text-sm" id="siteSubtitle">{config.get("site_subtitle", "Advanced Review Intelligence Platform")}</p>
             </div>
             <div class="dropdown">
@@ -958,9 +780,9 @@ def get_html_content():
                 </div>
             </div>
             <div class="grid grid-cols-3 gap-4">
-                <div class="metric-card text-center"><i class="fas fa-trend-up text-xl mb-1"></i><div class="text-sm text-gray-400">Weekly Trend</div><div id="trendIndicator" class="text-xl font-bold">0%</div></div>
-                <div class="metric-card text-center"><i class="fas fa-chart-line text-xl mb-1"></i><div class="text-sm text-gray-400">Growth Rate</div><div class="text-xl font-bold text-green-400" id="weeklyGrowth">0%</div></div>
-                <div class="metric-card text-center"><i class="fas fa-heart text-xl mb-1"></i><div class="text-sm text-gray-400">Sentiment Score</div><div class="text-xl font-bold text-purple-400" id="sentimentScore">0</div></div>
+                <div class="metric-card"><i class="fas fa-trend-up text-xl mb-1"></i><div class="text-sm text-gray-400">Weekly Trend</div><div id="trendIndicator" class="text-xl font-bold">0%</div></div>
+                <div class="metric-card"><i class="fas fa-chart-line text-xl mb-1"></i><div class="text-sm text-gray-400">Growth Rate</div><div class="text-xl font-bold text-green-400" id="weeklyGrowth">0%</div></div>
+                <div class="metric-card"><i class="fas fa-heart text-xl mb-1"></i><div class="text-sm text-gray-400">Sentiment Score</div><div class="text-xl font-bold text-purple-400" id="sentimentScore">0</div></div>
             </div>
         </div>
         
@@ -975,15 +797,6 @@ def get_html_content():
                         <div class="mb-4"><label class="block text-gray-300 mb-2">Comment</label><textarea id="comment" rows="4" class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white" required></textarea></div>
                         <button type="submit" class="btn-primary w-full"><i class="fas fa-paper-plane mr-2"></i>Submit Review</button>
                     </form>
-                </div>
-                
-                <div class="glass-card p-6 mt-4" id="aiChatWidget" style="display: {ai_chat_style};">
-                    <h2 class="text-2xl font-bold mb-4 text-white"><i class="fas fa-robot mr-2"></i>AI Assistant</h2>
-                    <div id="chatMessages" style="height: 200px; overflow-y: auto; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 0.75rem;"></div>
-                    <div class="flex gap-2">
-                        <input type="text" id="chatInput" placeholder="Ask me anything..." class="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white">
-                        <button id="sendChatBtn" class="btn-primary"><i class="fas fa-paper-plane"></i></button>
-                    </div>
                 </div>
                 
                 <div class="mt-4 text-center" id="websiteButtonContainer" style="display: {website_btn_style};">
@@ -1020,11 +833,9 @@ def get_html_content():
         
         function applyTheme(theme) {{
             const body = document.getElementById('appBody');
-            if(theme === 'light') {{
-                body.classList.add('light-theme');
-            }} else if(theme === 'dark') {{
-                body.classList.remove('light-theme');
-            }} else if(theme === 'system') {{
+            if(theme === 'light') body.classList.add('light-theme');
+            else if(theme === 'dark') body.classList.remove('light-theme');
+            else if(theme === 'system') {{
                 const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 if(isDark) body.classList.remove('light-theme');
                 else body.classList.add('light-theme');
@@ -1080,72 +891,20 @@ def get_html_content():
         async function loadConfig() {{
             const res = await fetch('/api/ui-config');
             const config = await res.json();
-            
             document.getElementById('siteTitle').textContent = config.site_title;
             document.getElementById('siteSubtitle').textContent = config.site_subtitle;
             document.getElementById('websiteBtnText').textContent = config.website_button_text;
             document.getElementById('mainWebsiteBtnText').textContent = config.website_button_text;
             document.getElementById('footerText').textContent = config.footer_text;
-            
-            const supportLink = document.getElementById('supportLinkBtn');
-            supportLink.href = config.discord_link;
-            const websiteLink = document.getElementById('websiteLinkBtn');
-            websiteLink.href = config.website_link;
-            const mainWebsiteBtn = document.getElementById('mainWebsiteBtn');
-            mainWebsiteBtn.href = config.website_link;
-            
-            const websiteContainer = document.getElementById('websiteButtonContainer');
-            websiteContainer.style.display = config.enable_website_button ? 'block' : 'none';
-            
-            const aiWidget = document.getElementById('aiChatWidget');
-            aiWidget.style.display = config.ai_enabled ? 'block' : 'none';
-            
-            if(config.ai_enabled && config.ai_welcome_message) {{
-                initAIChat(config.ai_welcome_message);
-            }}
+            document.getElementById('supportLinkBtn').href = config.discord_link;
+            document.getElementById('websiteLinkBtn').href = config.website_link;
+            document.getElementById('mainWebsiteBtn').href = config.website_link;
+            document.getElementById('websiteButtonContainer').style.display = config.enable_website_button ? 'block' : 'none';
             
             let particleCount = config.animation_intensity === 'light' ? 20 : config.animation_intensity === 'medium' ? 40 : 80;
             generateParticles(particleCount);
-            
             if(config.neon_glow) document.querySelectorAll('.glass-card').forEach(c => c.classList.add('neon-glow'));
         }}
-        
-        function initAIChat(welcomeMsg) {{
-            const chatDiv = document.getElementById('chatMessages');
-            chatDiv.innerHTML = `<div class="text-gray-300 mb-2"><i class="fas fa-robot mr-2"></i>${{welcomeMsg}}</div>`;
-        }}
-        
-        async function sendAIMessage() {{
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if(!message) return;
-            
-            const chatDiv = document.getElementById('chatMessages');
-            chatDiv.innerHTML += `<div class="text-blue-400 mt-2"><i class="fas fa-user mr-2"></i>${{escapeHtml(message)}}</div>`;
-            input.value = '';
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-            
-            chatDiv.innerHTML += `<div class="text-gray-400 mt-2"><i class="fas fa-spinner fa-spin mr-2"></i>Thinking...</div>`;
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-            
-            try {{
-                const res = await fetch('/api/ai/chat', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ message: message }})
-                }});
-                const data = await res.json();
-                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\\/div>/, '');
-                chatDiv.innerHTML += `<div class="text-green-400 mt-2"><i class="fas fa-robot mr-2"></i>${{escapeHtml(data.response)}}</div>`;
-            }} catch(e) {{
-                chatDiv.innerHTML = chatDiv.innerHTML.replace(/<div class="text-gray-400.*?<\\/div>/, '');
-                chatDiv.innerHTML += `<div class="text-red-400 mt-2"><i class="fas fa-exclamation-circle mr-2"></i>Error connecting to AI</div>`;
-            }}
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-        }}
-        
-        document.getElementById('sendChatBtn')?.addEventListener('click', sendAIMessage);
-        document.getElementById('chatInput')?.addEventListener('keypress', (e) => {{ if(e.key === 'Enter') sendAIMessage(); }});
         
         function generateParticles(count) {{
             const container = document.getElementById('particles');
@@ -1213,7 +972,6 @@ def get_html_content():
         loadStats();
         setInterval(() => {{ loadStats(); loadReviews(); }}, 30000);
     </script>
-    {config.get("custom_js", "")}
 </body>
 </html>"""
 
